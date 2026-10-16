@@ -1,87 +1,122 @@
-<script setup>
-import { ref } from "vue";
-import {
-  cercarPelicula,
-  cercarPeliculaById,
-} from "@/services/communicationManager";
+<script setup lang="ts">
+  import type { DetallOMDb, PeliculaOMDb } from '@/services/communicationManager'
+  import { ref } from 'vue'
+  import DetallPelicula from '@/components/DetallPelicula.vue'
+  import FitxaPelicula from '@/components/FitxaPelicula.vue'
+  import {
+    cercarPelicula,
+    cercarPeliculaById,
+  } from '@/services/communicationManager'
 
-const textCerca = ref("");
-const resultats = ref([]);
-const detall = ref(null);
-const seleccionada = ref(null);
+  const textCerca = ref('')
+  const resultats = ref<PeliculaOMDb[]>([])
+  const detall = ref<DetallOMDb | null>(null)
+  const carregant = ref(false)
+  const dialogObert = ref(false)
+  const haCercat = ref(false)
 
-async function ferCerca() {
-  resultats.value = await cercarPelicula(textCerca.value);
-}
+  /** Llança la cerca contra l'API i guarda els resultats a l'estat local. */
+  async function ferCerca () {
+    const terme = textCerca.value.trim()
+    if (!terme) return
 
-async function obrirDetall(imdbID) {
-  detall.value = await cercarPeliculaById(imdbID);
-  seleccionada.value = imdbID;
-}
+    carregant.value = true
+    haCercat.value = true
+    resultats.value = []
+
+    try {
+      resultats.value = await cercarPelicula(terme)
+    } finally {
+      carregant.value = false
+    }
+  }
+
+  /** Obre el detall; mentre arriba la resposta el diàleg mostra un indicador. */
+  async function obrirDetall (imdbID: string) {
+    dialogObert.value = true
+    detall.value = null
+    detall.value = await cercarPeliculaById(imdbID)
+  }
 </script>
 
 <template>
-  <v-navigation-drawer>
-    <v-list nav>
-      <v-list-item title="Navigation drawer" link></v-list-item>
-    </v-list>
-  </v-navigation-drawer>
-  <v-text-field v-model="textCerca" label="Què vols cercar?"></v-text-field>
+  <v-container class="py-6" max-width="1280">
+    <h1 class="text-h5 font-weight-bold mb-1">
+      Cercador de pel·lícules
+    </h1>
 
-  <v-btn @click="ferCerca"> Cercar </v-btn>
+    <p class="text-body-2 text-medium-emphasis mb-4">
+      Escriu un títol i descobreix informació de les teves pel·lícules favorites.
+    </p>
 
-  <v-container>
-    <v-card>
-      <v-container fluid>
-        <v-row density="comfortable">
-          <v-col
-            v-for="pelicula in resultats"
-            :key="pelicula.Title"
-            cols="12"
-            sm="6"
-            md="4"
-            lg="3"
-          >
-            <v-card>
-              <v-img :src="pelicula.Poster"> </v-img>
-              <v-card-title v-text="pelicula.Title"></v-card-title>
+    <!-- Cerca: camp i botó alineats en una mateixa fila i amb amplada coherent. -->
+    <v-row align="center" class="mb-4">
+      <v-col cols="12" md="8">
+        <v-text-field
+          v-model="textCerca"
+          clearable
+          hide-details="auto"
+          label="Què vols cercar?"
+          prepend-inner-icon="mdi-magnify"
+          variant="outlined"
+          @keyup.enter="ferCerca"
+        />
+      </v-col>
 
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn
-                  style="color: teal"
-                  text="Més info"
-                  variant="text"
-                  @click="obrirDetall(pelicula.imdbID)"
-                ></v-btn>
-              </v-card-actions>
+      <v-col cols="12" md="4">
+        <v-btn
+          block
+          color="primary"
+          :loading="carregant"
+          prepend-icon="mdi-magnify"
+          size="large"
+          variant="flat"
+          @click="ferCerca"
+        >
+          Cercar
+        </v-btn>
+      </v-col>
+    </v-row>
 
-              <v-expand-transition>
-                <v-card
-                  v-if="seleccionada === pelicula.imdbID"
-                  class="position absolute w-100"
-                  width="100%"
-                  style="bottom: 0"
-                >
-                  <v-card-text class="pb-0">
-                    <p>Descripció</p>
-                    <p>{{ detall?.Plot }}</p>
-                  </v-card-text>
+    <!-- Estat de càrrega -->
+    <div v-if="carregant" class="d-flex justify-center py-12">
+      <v-progress-circular color="primary" indeterminate size="56" />
+    </div>
 
-                  <v-card-actions class="pt-0">
-                    <v-btn
-                      style="color: teal"
-                      text="Close"
-                      variant="text"
-                      @click="seleccionada = null"
-                    ></v-btn>
-                  </v-card-actions>
-                </v-card>
-              </v-expand-transition>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-container>
-    </v-card>
+    <!-- Estat inicial -->
+    <v-empty-state
+      v-else-if="!haCercat"
+      icon="mdi-movie-search-outline"
+      text="Escriu el títol d'una pel·lícula o sèrie i prem «Cercar» per començar."
+      title="Comença la teva cerca"
+    />
+
+    <!-- Sense resultats -->
+    <v-empty-state
+      v-else-if="resultats.length === 0"
+      icon="mdi-emoticon-sad-outline"
+      text="Prova amb un altre títol o revisa l'ortografia."
+      title="No s'han trobat resultats"
+    />
+
+    <!-- Resultats -->
+    <v-row v-else>
+      <v-col
+        v-for="pelicula in resultats"
+        :key="pelicula.imdbID"
+        cols="12"
+        lg="3"
+        md="4"
+        sm="6"
+      >
+        <FitxaPelicula :pelicula="pelicula" @veure-detall="obrirDetall" />
+      </v-col>
+    </v-row>
+
+    <DetallPelicula
+      :detall="detall"
+      :obert="dialogObert"
+      @tancar="dialogObert = false"
+    />
   </v-container>
 </template>

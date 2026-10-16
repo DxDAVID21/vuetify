@@ -3,3 +3,24 @@
     font-family: var(--font-mono);
   }
 }
+
+/*
+  Accessibilitat (contrast i focus): qualsevol botó o enllaç que rebi el
+  focus per teclat mostra un contorn visible amb el color primari del tema.
+*/
+.v-btn:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}
+
+/* Respecta les preferències d'usuàries que redueixen les animacions. */
+@media (prefers-reduced-motion: reduce) {
+  .fitxa {
+    transition: none;
+  }
+
+  .fitxa:hover {
+    transform: none;
+  }
+}
