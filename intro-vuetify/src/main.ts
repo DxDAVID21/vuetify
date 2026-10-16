@@ -5,7 +5,7 @@
  */
 
 // Composables
-import { createApp, ref } from 'vue'
+import { createApp } from 'vue'
 
 // Plugins
 import { registerPlugins } from '@/plugins'

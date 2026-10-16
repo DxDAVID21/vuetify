@@ -1,0 +1,15 @@
+# Fallback per a aplicacions SPA (Vue Router en mode history).
+#
+# Sense això, en refrescar una ruta com /pelicules el servidor respon 404,
+# perquè el fitxer físic no existeix. Aquí reenviem totes les rutes que no
+# siguin fitxers o carpetes reals cap a index.html.
+#
+# Els camins són relatius a aquesta carpeta, perquè funcioni tant si es
+# serveix des de l'arrel del domini com des d'una subcarpeta.
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.html [L]
+</IfModule>

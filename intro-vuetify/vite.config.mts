@@ -5,8 +5,16 @@ import Fonts from 'unplugin-fonts/vite'
 import { defineConfig } from 'vite'
 import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 
+// Ruta on es publica l'aplicació al servidor de producció.
+// Ha de coincidir amb la URL real i amb la carpeta on queda el .htaccess.
+const RUTA_PRODUCCIO = '/vuetify/intro-vuetify/dist/'
+
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // En compilar (npm run build) els assets s'han de servir des de la
+  // subcarpeta de producció. En desenvolupament es manté '/' perquè el
+  // servidor local segueixi funcionant a http://localhost:3000/
+  base: command === 'build' ? RUTA_PRODUCCIO : '/',
   plugins: [
     tailwindcss(),
     Vue({
@@ -53,4 +61,4 @@ export default defineConfig({
   server: {
     port: 3000,
   },
-})
+}))

@@ -1,5 +1,5 @@
-<script setup>
+<script setup lang="ts">
 </script>
 <template>
-    Welcome to the <Menu></Menu>
+  Welcome to the <Menu />
 </template>
